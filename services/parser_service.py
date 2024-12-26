@@ -20,6 +20,7 @@ def create_driver():
     options.add_argument('--disable-dev-shm-usage')  # Использовать /tmp вместо /dev/shm
     options.add_argument('--disable-gpu')  # Отключить использование GPU
     options.add_argument('--single-process')  # Запустить в одном процессе
+    options.add_argument('--disable-software-rasterizer')  # Отключить софтверный растеризатор
     options.add_argument('--remote-debugging-port=9222')  # Включить удаленный дебаг
     logging.info("Инициализация WebDriver...")
     return webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
