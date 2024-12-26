@@ -69,17 +69,18 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db=Depends(get_db_co
 
 @router.post("/register", response_model=UserCreate)
 def register(user: UserCreate, db=Depends(get_db_connection)):
-    """Маршрут для регистрации нового пользователя."""
+    """Регистрация нового пользователя."""
     existing_user = get_user_by_email(user.email)
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already in use",
         )
-    if create_user_in_db(user.email, user.password):
+    if create_user_in_db(user.email, user.password, user.username):  # Добавлен user.username
         return user
     else:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error",
         )
+

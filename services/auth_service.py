@@ -36,9 +36,9 @@ def get_user_by_email(email: str):
         cursor.close()
         connection.close()
 
-def create_user(email: str, password: str) -> bool:
+def create_user(email: str, password: str, username: str) -> bool:
     """Создаёт нового пользователя в базе данных."""
-    password_hash = get_password_hash(password)
+    hashed_password = get_password_hash(password)
     connection = get_db_connection()
     if not connection:
         print("Database connection failed.")
@@ -46,14 +46,9 @@ def create_user(email: str, password: str) -> bool:
 
     cursor = connection.cursor()
     try:
-        # Проверка на существование пользователя
-        existing_user = get_user_by_email(email)
-        if existing_user:
-            print("User already exists.")
-            return False
-
-        query = "INSERT INTO users (email, password_hash) VALUES (%s, %s)"
-        cursor.execute(query, (email, password_hash))
+        # Добавлен параметр username
+        query = "INSERT INTO users (email, password_hash, username) VALUES (%s, %s, %s)"
+        cursor.execute(query, (email, hashed_password, username))
         connection.commit()
         return True
     except mysql.connector.Error as error:
@@ -62,6 +57,7 @@ def create_user(email: str, password: str) -> bool:
     finally:
         cursor.close()
         connection.close()
+
 
 def create_user_in_db(email: str, password: str) -> bool:
     """Создаёт нового пользователя в базе данных."""
