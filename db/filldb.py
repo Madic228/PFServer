@@ -41,7 +41,7 @@ def insert_data(cursor, data):
         ))
     print("Данные вставлены.")
 
-def load_json_to_db(json_file, db_config):
+def load_json_to_db(json_file):
     """Загружает данные из JSON-файла в базу данных."""
     with open(json_file, 'r', encoding='utf-8') as file:
         data = json.load(file)
@@ -73,7 +73,7 @@ def main():
 
     json_file = "merged_themes.json"  # Путь к JSON-файлу
 
-    load_json_to_db(json_file, db_config)
+    load_json_to_db(json_file)
 
 if __name__ == "__main__":
     main()
