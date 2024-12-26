@@ -21,7 +21,7 @@ def get_user_by_email(email: str):
 
     cursor = connection.cursor(dictionary=True)
     try:
-        query = "SELECT * FROM users WHERE email = %s"
+        query = "SELECT * FROM users WHERE email = %s OR username = %s"
         cursor.execute(query, (email,))
         result = cursor.fetchone()
         if result:
