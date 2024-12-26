@@ -1,6 +1,6 @@
 import mysql.connector
 import json
-from db.database import get_db_connection
+from database import get_db_connection
 
 def create_table(cursor):
     """Создает таблицу для хранения данных из JSON."""
