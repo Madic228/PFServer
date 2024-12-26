@@ -5,7 +5,7 @@ import uvicorn
 app = FastAPI()
 
 app.include_router(fill_news.router, prefix="/api/fill_news", tags=["Fill News"])
-app.include_router(auth.router)
+app.include_router(auth.router, prefix="/api/auth", tags=["Auth"])
 
 if __name__ == "__main__":
     uvicorn.run(
