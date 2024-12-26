@@ -12,7 +12,7 @@ def verify_password(plain_password: str, password_hash: str) -> bool:
     """Проверяет пароль."""
     return pwd_context.verify(plain_password, password_hash)
 
-def get_user_by_email_or_username(identifier: str):
+def get_user_by_email(identifier: str):
     """Получает пользователя из базы данных по email или username."""
     connection = get_db_connection()
     if not connection:
