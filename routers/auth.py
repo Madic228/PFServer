@@ -56,7 +56,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db=Depends(get_db_co
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    if not verify_password(form_data.password, user["hashed_password"]):
+    if not verify_password(form_data.password, user["password_hash"]):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",

@@ -8,9 +8,9 @@ def get_password_hash(password: str) -> str:
     """Хеширует пароль."""
     return pwd_context.hash(password)
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
+def verify_password(plain_password: str, password_hash: str) -> bool:
     """Проверяет пароль."""
-    return pwd_context.verify(plain_password, hashed_password)
+    return pwd_context.verify(plain_password, password_hash)
 
 def get_user_by_email(email: str):
     """Получает пользователя из базы данных по email."""
@@ -28,7 +28,7 @@ def get_user_by_email(email: str):
             return {
                 "id": result['id'],
                 "email": result['email'],
-                "hashed_password": result['hashed_password']
+                "password_hash": result['password_hash']
             }
         else:
             return None
@@ -38,7 +38,7 @@ def get_user_by_email(email: str):
 
 def create_user(email: str, password: str) -> bool:
     """Создаёт нового пользователя в базе данных."""
-    hashed_password = get_password_hash(password)
+    password_hash = get_password_hash(password)
     connection = get_db_connection()
     if not connection:
         print("Database connection failed.")
@@ -52,8 +52,8 @@ def create_user(email: str, password: str) -> bool:
             print("User already exists.")
             return False
 
-        query = "INSERT INTO users (email, hashed_password) VALUES (%s, %s)"
-        cursor.execute(query, (email, hashed_password))
+        query = "INSERT INTO users (email, password_hash) VALUES (%s, %s)"
+        cursor.execute(query, (email, password_hash))
         connection.commit()
         return True
     except mysql.connector.Error as error:
@@ -65,7 +65,7 @@ def create_user(email: str, password: str) -> bool:
 
 def create_user_in_db(email: str, password: str) -> bool:
     """Создаёт нового пользователя в базе данных."""
-    hashed_password = get_password_hash(password)
+    password_hash = get_password_hash(password)
     connection = get_db_connection()
     if not connection:
         print("Database connection failed.")
@@ -73,8 +73,8 @@ def create_user_in_db(email: str, password: str) -> bool:
 
     cursor = connection.cursor()
     try:
-        query = "INSERT INTO users (email, hashed_password) VALUES (%s, %s)"
-        cursor.execute(query, (email, hashed_password))
+        query = "INSERT INTO users (email, password_hash) VALUES (%s, %s)"
+        cursor.execute(query, (email, password_hash))
         connection.commit()
         return True
     except mysql.connector.Error as error:
