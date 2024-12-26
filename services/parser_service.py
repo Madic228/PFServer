@@ -16,6 +16,7 @@ def create_driver():
     """Создает и возвращает новый экземпляр WebDriver."""
     options = Options()
     options.add_argument('--headless')  # Запуск без интерфейса браузера
+    options.add_argument('--no-sandbox')  # Отключить sandbox для работы под root
     logger.info("Инициализация WebDriver...")
     return webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
