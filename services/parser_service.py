@@ -12,18 +12,18 @@ import time
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
+from webdriver_manager.chrome import ChromeDriverManager
+
 def create_driver():
-    """Создает и возвращает новый экземпляр WebDriver."""
     options = Options()
-    options.add_argument('--headless')  # Запуск без интерфейса браузера
-    options.add_argument('--no-sandbox')  # Отключить sandbox для работы под root
-    options.add_argument('--disable-dev-shm-usage')  # Использовать /tmp вместо /dev/shm
-    options.add_argument('--disable-gpu')  # Отключить использование GPU
-    options.add_argument('--single-process')  # Запустить в одном процессе
-    options.add_argument('--disable-software-rasterizer')  # Отключить софтверный растеризатор
-    options.add_argument('--remote-debugging-port=9222')  # Включить удаленный дебаг
-    logging.info("Инициализация WebDriver...")
-    return webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    options.add_argument('--headless')
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+    options.add_argument('--disable-gpu')
+    options.add_argument('--disable-software-rasterizer')
+    driver_path = ChromeDriverManager(version="131.0.6778.204").install()
+    return webdriver.Chrome(service=Service(driver_path), options=options)
+
 
 def extract_article_content(link):
     """Извлекает содержимое статьи по ссылке."""
