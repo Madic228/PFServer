@@ -19,6 +19,7 @@ def get_user_by_email(email: str):
         print("Database connection failed.")
         return None
 
+
     cursor = connection.cursor(dictionary=True)
     try:
         query = "SELECT * FROM users WHERE email = %s OR username = %s"
