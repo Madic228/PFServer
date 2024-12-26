@@ -1,5 +1,6 @@
 import mysql.connector
 import json
+from db.database import get_db_connection
 
 def create_table(cursor):
     """Создает таблицу для хранения данных из JSON."""
@@ -45,7 +46,7 @@ def load_json_to_db(json_file, db_config):
     with open(json_file, 'r', encoding='utf-8') as file:
         data = json.load(file)
 
-    conn = mysql.connector.connect(**db_config)
+    conn = get_db_connection()
     cursor = conn.cursor()
 
     try:
