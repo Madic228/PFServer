@@ -7,5 +7,5 @@ router = APIRouter()
 
 @router.post("/news/", response_model=List[NewsResponse])
 def fetch_news(request: NewsRequest):
-    """Возвращает первые 3 новости по указанной тематике."""
-    return get_news_by_topic(request.topic_id)
+    """Возвращает новости по указанной тематике и количеству."""
+    return get_news_by_topic(request.topic_id, request.limit)
