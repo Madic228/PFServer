@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from schemas import UserCreate, Token
+from routers.schemas import UserCreate, Token
 from services.auth_service import get_user_by_email, verify_password, get_password_hash, create_user_in_db
 from db.database import get_db_connection
 from datetime import datetime, timedelta
