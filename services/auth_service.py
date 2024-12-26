@@ -12,8 +12,8 @@ def verify_password(plain_password: str, password_hash: str) -> bool:
     """Проверяет пароль."""
     return pwd_context.verify(plain_password, password_hash)
 
-def get_user_by_email(email: str):
-    """Получает пользователя из базы данных по email."""
+def get_user_by_email_or_username(identifier: str):
+    """Получает пользователя из базы данных по email или username."""
     connection = get_db_connection()
     if not connection:
         print("Database connection failed.")
@@ -21,13 +21,15 @@ def get_user_by_email(email: str):
 
     cursor = connection.cursor(dictionary=True)
     try:
-        query = "SELECT * FROM users WHERE email = %s"
-        cursor.execute(query, (email,))
+        # Ищем пользователя либо по email, либо по username
+        query = "SELECT * FROM users WHERE email = %s OR username = %s"
+        cursor.execute(query, (identifier, identifier))
         result = cursor.fetchone()
         if result:
             return {
                 "id": result['id'],
                 "email": result['email'],
+                "username": result['username'],
                 "password_hash": result['password_hash']
             }
         else:
