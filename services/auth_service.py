@@ -59,7 +59,7 @@ def create_user(email: str, password: str, username: str) -> bool:
         connection.close()
 
 
-def create_user_in_db(email: str, password: str) -> bool:
+def create_user_in_db(email: str, password: str, username: str) -> bool:
     """Создаёт нового пользователя в базе данных."""
     password_hash = get_password_hash(password)
     connection = get_db_connection()
@@ -69,8 +69,8 @@ def create_user_in_db(email: str, password: str) -> bool:
 
     cursor = connection.cursor()
     try:
-        query = "INSERT INTO users (email, password_hash) VALUES (%s, %s)"
-        cursor.execute(query, (email, password_hash))
+        query = "INSERT INTO users (email, password_hash, username) VALUES (%s, %s, %s)"
+        cursor.execute(query, (email, password_hash, username))
         connection.commit()
         return True
     except mysql.connector.Error as error:
