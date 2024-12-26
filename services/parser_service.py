@@ -17,7 +17,11 @@ def create_driver():
     options = Options()
     options.add_argument('--headless')  # Запуск без интерфейса браузера
     options.add_argument('--no-sandbox')  # Отключить sandbox для работы под root
-    logger.info("Инициализация WebDriver...")
+    options.add_argument('--disable-dev-shm-usage')  # Использовать /tmp вместо /dev/shm
+    options.add_argument('--disable-gpu')  # Отключить использование GPU
+    options.add_argument('--single-process')  # Запустить в одном процессе
+    options.add_argument('--remote-debugging-port=9222')  # Включить удаленный дебаг
+    logging.info("Инициализация WebDriver...")
     return webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
 def extract_article_content(link):
