@@ -1,6 +1,6 @@
 from typing import List
 from db.database import get_db_connection
-from routers.fill_news import NewsResponse
+from models.news import NewsRequest, NewsResponse
 from fastapi import HTTPException
 
 def get_news_by_topic(topic_id: int) -> List[NewsResponse]:
