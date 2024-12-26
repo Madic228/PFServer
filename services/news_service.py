@@ -1,5 +1,5 @@
 from typing import List
-from database import get_db_connection
+from db.database import get_db_connection
 from models.news import NewsResponse
 from fastapi import HTTPException
 
