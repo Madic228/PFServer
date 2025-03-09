@@ -67,7 +67,7 @@ def main():
     db_config = {
         'host': 'localhost',  # Замените на адрес вашего сервера
         'user': 'admin',       # Ваш пользователь MySQL
-        'password': 'admin',  # Ваш пароль MySQL
+        'password': 'madicpas123',  # Ваш пароль MySQL
         'database': 'post_factory'  # Имя вашей базы данных
     }
 

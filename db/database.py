@@ -8,6 +8,6 @@ def get_db_connection():
     return mysql.connector.connect(
         host="localhost",
         user="admin",
-        password="admin",
+        password="madicpas123",
         database="post_factory"
     )
