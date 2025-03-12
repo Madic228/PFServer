@@ -1,7 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
-from test.myPars2.database.database import get_db_connection
+from db.database import get_db_connection
 
 class Theme1NewsParser:
     def __init__(self, base_url, topic_id):
