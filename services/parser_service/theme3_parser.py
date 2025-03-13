@@ -128,18 +128,35 @@ class Theme3NewsParser:
         conn.close()
 
     def cleanup_old_articles(self, cursor):
-        """Удаляет самые старые статьи, если их больше 20."""
-        delete_query = """
-            DELETE FROM articles 
-            WHERE id IN (
-                SELECT id FROM articles 
-                WHERE topic_id = %s 
-                ORDER BY publication_date ASC 
-                LIMIT (SELECT COUNT(*) FROM articles WHERE topic_id = %s) - 20
-            )
-        """
-        cursor.execute(delete_query, (self.topic_id, self.topic_id))
-        print("♻️ Удалены старые новости, чтобы оставить ровно 20!")
+        """Удаляет старые записи, если в БД больше 20 статей по данной теме."""
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Узнаем количество статей по данной теме
+        count_query = "SELECT COUNT(*) FROM articles WHERE topic_id = %s"
+        cursor.execute(count_query, (self.topic_id,))
+        count = cursor.fetchone()[0]
+
+        if count > 20:
+            # Удаляем старые статьи, оставляя только 20 самых свежих
+            delete_query = """
+                   DELETE FROM articles 
+                   WHERE topic_id = %s 
+                   AND id IN (
+                       SELECT id FROM (
+                           SELECT id FROM articles 
+                           WHERE topic_id = %s 
+                           ORDER BY publication_date ASC 
+                           LIMIT %s
+                       ) AS subquery
+                   )
+               """
+            articles_to_delete = count - 20  # Сколько лишних статей нужно удалить
+            cursor.execute(delete_query, (self.topic_id, self.topic_id, articles_to_delete))
+            conn.commit()
+
+        cursor.close()
+        conn.close()
 
     def run(self, max_articles=10):
         """Запускает парсер для получения и сохранения новостей с содержимым."""
