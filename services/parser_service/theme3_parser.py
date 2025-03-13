@@ -5,10 +5,9 @@ import json
 from db.database import get_db_connection
 
 class Theme3NewsParser:
-    def __init__(self, base_url, topic_id, max_articles=10):
+    def __init__(self, base_url, topic_id):
         self.base_url = base_url
         self.topic_id = topic_id
-        self.max_articles = max_articles
 
     def fetch_page(self, url: str):
         """Загружает содержимое веб-страницы."""
@@ -22,7 +21,7 @@ class Theme3NewsParser:
             print(f"Ошибка при загрузке страницы: {e}")
             return None
 
-    def parse_finance_articles(self, html: str):
+    def parse_finance_articles(self, html: str, max_articles):
         """Парсит список новостей из темы 'Финансы'."""
         soup = BeautifulSoup(html, 'html.parser')
         news_list = []
@@ -35,7 +34,7 @@ class Theme3NewsParser:
 
         # Ищем новости внутри контейнера
         news_items = news_container.find_all('a', attrs={'data-test': 'archive-record-header'})
-        for item in news_items[:self.max_articles]:  # Ограничение на количество статей
+        for item in news_items[:max_articles]:  # Ограничение на количество статей
             try:
                 title = item.text.strip()
                 link = "https://www.e1.ru" + item['href']  # Полная ссылка
@@ -116,17 +115,17 @@ class Theme3NewsParser:
         conn.close()
         print(f"✅ {len(articles)} статей записано в БД!")
 
-    def run(self):
+    def run(self, max_articles=10):
         """Запускает парсер для получения и сохранения новостей с содержимым."""
         html = self.fetch_page(self.base_url)
         if html:
-            articles = self.parse_finance_articles(html)
+            articles = self.parse_finance_articles(html, max_articles)
             if articles:
                 self.update_content_from_links(articles)
                 self.save_to_db(articles)
 
 if __name__ == "__main__":
     # URL темы 'Финансы'
-    base_url = "https://www.e1.ru/text/theme/37211/"
-    parser = Theme3NewsParser(base_url, topic_id=3, max_articles=10)
-    parser.run()
+    parser = Theme3NewsParser("https://www.e1.ru/text/theme/37211/", topic_id=3)
+    parser.run(max_articles=10)
+

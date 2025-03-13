@@ -6,10 +6,9 @@ from db.database import get_db_connection
 from datetime import datetime
 
 class Theme4NewsParser:
-    def __init__(self, base_url, topic_id, max_articles=10):
+    def __init__(self, base_url, topic_id):
         self.base_url = base_url
         self.topic_id = topic_id
-        self.max_articles = max_articles
 
     def fetch_page(self, url: str):
         """Загружает содержимое веб-страницы."""
@@ -22,7 +21,7 @@ class Theme4NewsParser:
             print(f"Ошибка при загрузке страницы: {e}")
             return None
 
-    def parse_construction_articles(self, html: str):
+    def parse_construction_articles(self, html: str, max_articles):
         """Парсит список новостей из темы 'Строительные проекты и застройщики'."""
         soup = BeautifulSoup(html, 'html.parser')
         news_list = []
@@ -35,7 +34,7 @@ class Theme4NewsParser:
 
         # Ищем новости внутри контейнера
         news_items = news_container.find_all('div', class_='wrap_fgrum')
-        for item in news_items[:self.max_articles]:  # Ограничение на количество статей
+        for item in news_items[:max_articles]:  # Ограничение на количество статей
             try:
                 # Заголовок и ссылка
                 title_tag = item.find('a', class_='header_fgrum')
@@ -139,11 +138,11 @@ class Theme4NewsParser:
         conn.close()
         print(f"✅ {len(articles)} статей записано в БД!")
 
-    def run(self):
+    def run(self, max_articles=10):
         """Запускает парсер для получения и сохранения новостей с содержимым."""
         html = self.fetch_page(self.base_url)
         if html:
-            articles = self.parse_construction_articles(html)
+            articles = self.parse_finance_articles(html, max_articles)
             if articles:
                 self.update_content_from_links(articles)
                 self.save_to_db(articles)
@@ -151,5 +150,5 @@ class Theme4NewsParser:
 if __name__ == "__main__":
     # URL темы 'Строительные проекты и застройщики'
     base_url = "https://www.e1.ru/text/tags/zastroyschik/"
-    parser = Theme4NewsParser(base_url, topic_id=4, max_articles=10)
-    parser.run()
+    parser = Theme4NewsParser(base_url, topic_id=4)
+    parser.run(max_articles=10)
