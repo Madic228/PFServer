@@ -45,7 +45,7 @@ class Theme1NewsParser:
                     'link': link,
                     'publication_date': publication_date,
                     'content': content,
-                    'summarized_text': None,
+                    'summarized_text': "",
                     'source': self.source
                 })
             except Exception as e:
