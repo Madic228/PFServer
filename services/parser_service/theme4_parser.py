@@ -142,7 +142,7 @@ class Theme4NewsParser:
         """Запускает парсер для получения и сохранения новостей с содержимым."""
         html = self.fetch_page(self.base_url)
         if html:
-            articles = self.parse_finance_articles(html, max_articles)
+            articles = self.parse_construction_articles(html, max_articles)
             if articles:
                 self.update_content_from_links(articles)
                 self.save_to_db(articles)
