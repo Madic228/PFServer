@@ -136,30 +136,56 @@ class Theme2NewsParser:
             return None
 
     def save_to_db(self, articles):
-        """Записывает статьи в БД"""
+        """Записывает статьи в БД, избегая дубликатов и удаляя старые записи, если их более 20."""
         conn = get_db_connection()
         cursor = conn.cursor()
 
+        # Проверяем, какие ссылки уже есть в базе
+        existing_links_query = "SELECT link FROM articles WHERE topic_id = %s"
+        cursor.execute(existing_links_query, (self.topic_id,))
+        existing_links = {row[0] for row in cursor.fetchall()}  # Собираем существующие ссылки
+
         query = """
-            INSERT INTO articles (topic_id, title, publication_date, link, content, summarized_text, source)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-        """
+               INSERT INTO articles (topic_id, title, publication_date, link, content, summarized_text, source)
+               VALUES (%s, %s, %s, %s, %s, %s, %s)
+           """
 
-        for article in articles:
-            cursor.execute(query, (
-                article["topic_id"],
-                article["title"],
-                article["publication_date"],  # Здесь уже datetime объект
-                article["link"],
-                article["content"],
-                article["summarized_text"],
-                article["source"]
-            ))
+        new_articles = [article for article in articles if article["link"] not in existing_links]
 
-        conn.commit()
+        if new_articles:
+            for article in new_articles:
+                cursor.execute(query, (
+                    article["topic_id"],
+                    article["title"],
+                    article["publication_date"],
+                    article["link"],
+                    article["content"],
+                    article["summarized_text"],
+                    article["source"]
+                ))
+
+            conn.commit()
+            print(f"✅ {len(new_articles)} новых статей записано в БД!")
+
+            # Удаляем старые статьи, если их больше 20
+            self.cleanup_old_articles(cursor)
+
         cursor.close()
         conn.close()
-        print(f"✅ {len(articles)} статей записано в БД!")
+
+    def cleanup_old_articles(self, cursor):
+        """Удаляет самые старые статьи, если их больше 20."""
+        delete_query = """
+            DELETE FROM articles 
+            WHERE id IN (
+                SELECT id FROM articles 
+                WHERE topic_id = %s 
+                ORDER BY publication_date ASC 
+                LIMIT (SELECT COUNT(*) FROM articles WHERE topic_id = %s) - 20
+            )
+        """
+        cursor.execute(delete_query, (self.topic_id, self.topic_id))
+        print("♻️ Удалены старые новости, чтобы оставить ровно 20!")
 
     def run(self, max_articles=10):
         """Запускает парсер для получения и сохранения новостей."""
