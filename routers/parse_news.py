@@ -158,8 +158,14 @@ def load_scheduled_jobs():
     conn.close()
 
     if schedule:
-        scheduler.add_job(run_all_parsers, 'interval', hours=schedule["interval_hours"], args=[schedule["max_articles"]], id="all_parsers")
-        print(f"🔄 Загружена задача парсинга всех тем (каждые {schedule['interval_hours']} часов, {schedule['max_articles']} статей на тему).")
+        # Преобразуем кортеж в словарь
+        schedule_dict = {
+            "interval_hours": schedule[0],
+            "max_articles": schedule[1]
+        }
+        scheduler.add_job(run_all_parsers, 'interval', hours=schedule_dict["interval_hours"], args=[schedule_dict["max_articles"]], id="all_parsers")
+        print(f"🔄 Загружена задача парсинга всех тем (каждые {schedule_dict['interval_hours']} часов, {schedule_dict['max_articles']} статей на тему).")
+
 
 # Запуск планировщика при старте сервера
 scheduler.start()
