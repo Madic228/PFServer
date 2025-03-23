@@ -104,7 +104,7 @@ class Theme4NewsParser:
         """Обновляет поле 'content' у новостей, парся статьи по ссылкам."""
         for article in articles:
             if "link" in article and article["link"]:
-                print(f"Парсинг статьи: {article['title']}")
+                #print(f"Парсинг статьи: {article['title']}")
                 html = self.fetch_page(article["link"])
                 if html:
                     content = self.parse_article_content(html)
