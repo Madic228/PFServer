@@ -80,7 +80,11 @@ def parse_all_news(interval_hours: int, max_articles: int = 10):
     """
     try:
         schedule_all_parsers(interval_hours, max_articles)
-        return {"message": f"Парсинг ВСЕХ тем установлен на каждые {interval_hours} часов."}
+
+        # Сразу запускаем парсер после добавления расписания
+        run_all_parsers(max_articles)
+
+        return {"message": f"Парсинг ВСЕХ тем запущен сразу и установлен на каждые {interval_hours} часов."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Ошибка при установке таймера: {str(e)}")
 
