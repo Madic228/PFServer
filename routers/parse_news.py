@@ -113,7 +113,11 @@ def update_schedule(interval_hours: int, max_articles: int = 10):
     ```
     """
     try:
+        # Обновляем расписание парсинга
         schedule_all_parsers(interval_hours, max_articles)
+
+        # Сразу запускаем парсинг всех тем после обновления расписания
+        run_all_parsers(max_articles)
         return {"message": f"Интервал обновлен на {interval_hours} часов. Количество статей: {max_articles}."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Ошибка при обновлении расписания: {str(e)}")
