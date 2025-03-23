@@ -2,6 +2,10 @@ from fastapi import FastAPI
 from routers import fill_news, auth, parse_news, summarize_news
 import uvicorn
 
+import logging_config
+logging_config.setup_logging()
+
+
 app = FastAPI()
 
 app.include_router(fill_news.router, prefix="/api/fill_news", tags=["Fill News"])
