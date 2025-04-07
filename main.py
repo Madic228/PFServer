@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routers import fill_news, auth, parse_news, summarize_news
+from routers import fill_news, auth, parse_news, summarize_news, generations
 import uvicorn
 
 import logging_config
@@ -11,6 +11,7 @@ app = FastAPI()
 app.include_router(fill_news.router, prefix="/api/fill_news", tags=["Fill News"])
 app.include_router(auth.router, prefix="/api/auth", tags=["Auth"])
 app.include_router(parse_news.router, prefix="/api/parse", tags=["Parse News"])
+app.include_router(generations.router, prefix="/api/generations", tags=["Generations"])
 #app.include_router(summarize_news.router, prefix="/api/summarize", tags=["Summarize News"])
 
 if __name__ == "__main__":
