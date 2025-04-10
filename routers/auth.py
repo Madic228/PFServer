@@ -5,13 +5,22 @@ from services.auth_service import get_user_by_email, verify_password, get_passwo
 from db.database import get_db_connection
 from datetime import datetime, timedelta
 from jose import jwt, JWTError
+import os
+from dotenv import load_dotenv
+
+# Загружаем переменные окружения из .env файла
+load_dotenv()
 
 router = APIRouter()
 
-# Замените на ваш секретный ключ
-SECRET_KEY = "your_secret_key"
+# Получаем секретный ключ из переменных окружения
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise ValueError("SECRET_KEY не найден в переменных окружения! Проверьте файл .env")
+
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+# Получаем срок действия токена из переменных окружения
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
 
