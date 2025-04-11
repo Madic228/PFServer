@@ -7,7 +7,8 @@ from services.generations_service import (
     create_generation, 
     get_generation_by_id, 
     update_generation_publish_status, 
-    delete_generation
+    delete_generation,
+    update_generation
 )
 from routers.auth import get_current_user
 
@@ -136,4 +137,36 @@ async def remove_generation(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Не удалось удалить генерацию"
-        ) 
+        )
+
+@router.put("/{id}/edit", response_model=Generation)
+async def edit_generation(
+    id: int = Path(..., title="ID генерации", description="Уникальный идентификатор генерации"),
+    generation_data: GenerationCreate,
+    current_user = Depends(get_current_user)
+):
+    """
+    Редактирование генерации пользователя.
+    Пользователь может редактировать только свои генерации.
+    ID пользователя извлекается из JWT токена.
+    """
+    user_id = current_user["id"]
+    generation = get_generation_by_id(id, user_id)
+    
+    if not generation:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Генерация не найдена или принадлежит другому пользователю"
+        )
+    
+    success = update_generation(id, user_id, generation_data.title, generation_data.content)
+    
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Не удалось обновить генерацию"
+        )
+    
+    # Получаем обновленную генерацию
+    updated_generation = get_generation_by_id(id, user_id)
+    return updated_generation 

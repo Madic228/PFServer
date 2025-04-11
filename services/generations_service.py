@@ -121,4 +121,30 @@ def delete_generation(generation_id: int, user_id: int) -> bool:
         return False
     finally:
         cursor.close()
+        conn.close()
+
+def update_generation(generation_id: int, user_id: int, title: str, content: str) -> bool:
+    """
+    Обновление генерации
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        cursor.execute(
+            """
+            UPDATE user_generations 
+            SET title = %s, content = %s
+            WHERE id = %s AND user_id = %s
+            """,
+            (title, content, generation_id, user_id)
+        )
+        conn.commit()
+        return cursor.rowcount > 0
+    except Exception as e:
+        conn.rollback()
+        print(f"Error updating generation: {e}")
+        return False
+    finally:
+        cursor.close()
         conn.close() 
