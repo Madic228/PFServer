@@ -141,8 +141,8 @@ async def remove_generation(
 
 @router.put("/{id}/edit", response_model=Generation)
 async def edit_generation(
-    id: int = Path(..., title="ID генерации", description="Уникальный идентификатор генерации"),
     generation_data: GenerationCreate,
+    id: int = Path(..., title="ID генерации", description="Уникальный идентификатор генерации"),
     current_user = Depends(get_current_user)
 ):
     """
