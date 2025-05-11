@@ -192,6 +192,50 @@ def load_scheduled_jobs():
         )
         print(f"🔄 Загружена задача парсинга (каждые {schedule_dict['interval_hours']} часов, {schedule_dict['max_articles']} статей).")
 
+# Эндпоинт для разового парсинга без добавления в расписание
+@router.post("/parse_once/")
+def parse_once(start_date: str, end_date: str, max_articles: int = 10):
+    """
+    **Выполняет разовый парсинг за указанный период без добавления в расписание.**
+
+    **Параметры:**
+    - `start_date` (str): Начальная дата в формате ДД.ММ.ГГГГ
+    - `end_date` (str): Конечная дата в формате ДД.ММ.ГГГГ
+    - `max_articles` (int, по умолчанию 10): Количество новостей для сбора.
+
+    **Пример запроса:**
+    ```json
+    {
+        "start_date": "03.05.2025",
+        "end_date": "10.05.2025",
+        "max_articles": 10
+    }
+    ```
+    **Ответ:**
+    ```json
+    {
+        "message": "Парсинг выполнен успешно. Собрано 10 статей.",
+        "articles_count": 10
+    }
+    ```
+    """
+    try:
+        parser = PeriodNewsParser(
+            parsing_mode="custom_period",
+            start_date=start_date,
+            end_date=end_date,
+            total_pages=0,
+            test_articles_count=max_articles
+        )
+        
+        articles = parser.parse()
+        return {
+            "message": f"Парсинг выполнен успешно. Собрано {len(articles)} статей.",
+            "articles_count": len(articles)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Ошибка при выполнении парсинга: {str(e)}")
+
 # Запуск планировщика при старте сервера
 scheduler.start()
 load_scheduled_jobs()
