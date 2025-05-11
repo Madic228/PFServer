@@ -100,38 +100,30 @@ def get_topics_statistics(start_date: str, end_date: str) -> Dict:
         cursor.execute(total_query, (start_date, end_date))
         total = cursor.fetchone()['total']
 
-        # Получаем статистику по темам
+        # Получаем статистику по темам с названиями из таблицы topics
         topics_query = """
             SELECT 
-                topic_id,
-                COUNT(*) as count
-            FROM articles
-            WHERE DATE(publication_date) BETWEEN %s AND %s
-            GROUP BY topic_id
-            ORDER BY topic_id
+                t.id as topic_id,
+                t.name as topic_name,
+                COUNT(a.id) as count
+            FROM topics t
+            LEFT JOIN articles a ON t.id = a.topic_id 
+                AND DATE(a.publication_date) BETWEEN %s AND %s
+            GROUP BY t.id, t.name
+            ORDER BY t.id
         """
         cursor.execute(topics_query, (start_date, end_date))
-        topics_data = {row['topic_id']: row['count'] for row in cursor.fetchall()}
-
-        # Словарь с названиями тем
-        topic_names = {
-            1: "РБК Недвижимость",
-            2: "RIA Realty",
-            3: "E1.RU Финансы",
-            4: "E1.RU Строительство",
-            5: "E1.RU Недвижимость",
-            6: "E1.RU Общие новости"
-        }
+        topics_data = cursor.fetchall()
 
         # Формируем результат для всех тем
         topics = []
-        for topic_id in range(1, 7):  # Всего 6 тем
-            count = topics_data.get(topic_id, 0)
+        for row in topics_data:
+            count = row['count']
             percentage = round((count / total) * 100, 2) if total > 0 else 0.0
             
             topics.append({
-                "topic_id": topic_id,
-                "topic_name": topic_names.get(topic_id, "Неизвестная тема"),
+                "topic_id": row['topic_id'],
+                "topic_name": row['topic_name'],
                 "count": count,
                 "percentage": percentage
             })

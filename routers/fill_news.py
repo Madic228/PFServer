@@ -37,7 +37,7 @@ def fetch_news_by_date(request: DateRangeRequest):
 @router.post("/news/statistics/")
 def get_news_statistics(request: DateRangeRequest):
     """
-    **Возвращает статистику по темам за указанный период.**
+    **Возвращает статистику по всем темам за указанный период.**
     
     **Параметры:**
     - `start_date` (str): Начальная дата в формате YYYY-MM-DD
@@ -62,13 +62,39 @@ def get_news_statistics(request: DateRangeRequest):
         "topics": [
             {
                 "topic_id": 1,
+                "topic_name": "РБК Недвижимость",
                 "count": 25,
                 "percentage": 25.0
             },
             {
                 "topic_id": 2,
+                "topic_name": "RIA Realty",
                 "count": 15,
                 "percentage": 15.0
+            },
+            {
+                "topic_id": 3,
+                "topic_name": "E1.RU Финансы",
+                "count": 0,
+                "percentage": 0.0
+            },
+            {
+                "topic_id": 4,
+                "topic_name": "E1.RU Строительство",
+                "count": 30,
+                "percentage": 30.0
+            },
+            {
+                "topic_id": 5,
+                "topic_name": "E1.RU Недвижимость",
+                "count": 20,
+                "percentage": 20.0
+            },
+            {
+                "topic_id": 6,
+                "topic_name": "E1.RU Общие новости",
+                "count": 10,
+                "percentage": 10.0
             }
         ]
     }
