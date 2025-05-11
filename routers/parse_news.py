@@ -2,106 +2,120 @@ from fastapi import APIRouter, HTTPException
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from db.database import get_db_connection
-from services.parser_service.theme1_parser import Theme1NewsParser
-from services.parser_service.theme2_parser import Theme2NewsParser
-from services.parser_service.theme3_parser import Theme3NewsParser
-from services.parser_service.theme4_parser import Theme4NewsParser
+from services.parser_service.period_parser import PeriodNewsParser
 
 router = APIRouter()
 scheduler = BackgroundScheduler()
 
-
-# Функция парсинга всех тем сразу
-def run_all_parsers(max_articles: int = 10):
-    """Запускает парсинг всех тем по указанному количеству статей."""
-    parsers = [
-        Theme1NewsParser("https://realty.rbc.ru/industry/", topic_id=1),
-        Theme2NewsParser("https://realty.ria.ru/tag_thematic_category_Zakonodatelstvo/", topic_id=2),
-        Theme3NewsParser("https://www.e1.ru/text/theme/37211/", topic_id=3),
-        Theme4NewsParser("https://www.e1.ru/text/tags/zastroyschik/", topic_id=4),
-    ]
-
-    for parser in parsers:
-        try:
-            parser.run(max_articles=max_articles)
-            print(f"✅ Парсинг для topic_id={parser.topic_id} завершен. Собрано {max_articles} статей.")
-        except Exception as e:
-            print(f"❌ Ошибка при парсинге topic_id={parser.topic_id}: {str(e)}")
+# Функция парсинга за период
+def run_period_parser(start_date: str, end_date: str, max_articles: int = 10):
+    """Запускает парсинг за указанный период."""
+    parser = PeriodNewsParser(
+        parsing_mode="custom_period",
+        start_date=start_date,
+        end_date=end_date,
+        total_pages=0,
+        test_articles_count=max_articles
+    )
+    
+    try:
+        articles = parser.parse()
+        print(f"✅ Парсинг завершен. Собрано {len(articles)} статей.")
+        return articles
+    except Exception as e:
+        print(f"❌ Ошибка при парсинге: {str(e)}")
+        return []
 
 # Функция для установки таймера парсинга
-def schedule_all_parsers(interval_hours: int, max_articles: int = 10):
+def schedule_period_parser(interval_hours: int, start_date: str, end_date: str, max_articles: int = 10):
     """
     Записывает расписание в БД и добавляет задачу в планировщик.
 
     :param interval_hours: Интервал времени в часах.
-    :param max_articles: Количество статей для парсинга в каждой теме.
+    :param start_date: Начальная дата в формате ДД.ММ.ГГГГ
+    :param end_date: Конечная дата в формате ДД.ММ.ГГГГ
+    :param max_articles: Количество статей для парсинга.
     """
     conn = get_db_connection()
     with conn.cursor() as cursor:
         cursor.execute("""
-            INSERT INTO parser_schedule (topic_id, interval_hours, max_articles)
-            VALUES (0, %s, %s)
-            ON DUPLICATE KEY UPDATE interval_hours=%s, max_articles=%s
-        """, (interval_hours, max_articles, interval_hours, max_articles))
+            INSERT INTO parser_schedule (topic_id, interval_hours, max_articles, start_date, end_date)
+            VALUES (0, %s, %s, %s, %s)
+            ON DUPLICATE KEY UPDATE interval_hours=%s, max_articles=%s, start_date=%s, end_date=%s
+        """, (interval_hours, max_articles, start_date, end_date, interval_hours, max_articles, start_date, end_date))
     conn.commit()
     conn.close()
 
     # Удаляем старую задачу, если была
-    if scheduler.get_job("all_parsers"):
-        scheduler.remove_job("all_parsers")
+    if scheduler.get_job("period_parser"):
+        scheduler.remove_job("period_parser")
 
     # Добавляем новую задачу в планировщик
-    scheduler.add_job(run_all_parsers, 'interval', hours=interval_hours, args=[max_articles], id="all_parsers")
-    print(f"⏳ Парсинг ВСЕХ тем теперь выполняется каждые {interval_hours} часов.")
+    scheduler.add_job(
+        run_period_parser, 
+        'interval', 
+        hours=interval_hours, 
+        args=[start_date, end_date, max_articles], 
+        id="period_parser"
+    )
+    print(f"⏳ Парсинг установлен на каждые {interval_hours} часов.")
 
-# Эндпоинт для запуска парсинга всех тем и добавления в расписание
-@router.post("/parse_all/")
-def parse_all_news(interval_hours: int, max_articles: int = 10):
+# Эндпоинт для запуска парсинга за период и добавления в расписание
+@router.post("/parse_period/")
+def parse_period_news(interval_hours: int, start_date: str, end_date: str, max_articles: int = 10):
     """
-    **Запускает парсинг всех тем и устанавливает таймер.**
+    **Запускает парсинг за указанный период и устанавливает таймер.**
 
     **Параметры:**
     - `interval_hours` (int): Интервал в часах (например, `6` для парсинга раз в 6 часов).
-    - `max_articles` (int, по умолчанию 10): Количество новостей для каждой темы.
+    - `start_date` (str): Начальная дата в формате ДД.ММ.ГГГГ
+    - `end_date` (str): Конечная дата в формате ДД.ММ.ГГГГ
+    - `max_articles` (int, по умолчанию 10): Количество новостей для сбора.
 
     **Пример запроса:**
     ```json
     {
         "interval_hours": 6,
+        "start_date": "03.05.2025",
+        "end_date": "10.05.2025",
         "max_articles": 10
     }
     ```
     **Ответ:**
     ```json
     {
-        "message": "Парсинг ВСЕХ тем установлен на каждые 6 часов."
+        "message": "Парсинг установлен на каждые 6 часов."
     }
     ```
     """
     try:
-        schedule_all_parsers(interval_hours, max_articles)
+        schedule_period_parser(interval_hours, start_date, end_date, max_articles)
 
         # Сразу запускаем парсер после добавления расписания
-        run_all_parsers(max_articles)
+        run_period_parser(start_date, end_date, max_articles)
 
-        return {"message": f"Парсинг ВСЕХ тем запущен сразу и установлен на каждые {interval_hours} часов."}
+        return {"message": f"Парсинг запущен сразу и установлен на каждые {interval_hours} часов."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Ошибка при установке таймера: {str(e)}")
 
 # Эндпоинт для обновления расписания парсинга
 @router.put("/update_schedule/")
-def update_schedule(interval_hours: int, max_articles: int = 10):
+def update_schedule(interval_hours: int, start_date: str, end_date: str, max_articles: int = 10):
     """
-    **Обновляет интервал и количество статей в расписании.**
+    **Обновляет интервал и параметры в расписании.**
 
     **Параметры:**
     - `interval_hours` (int): Новый интервал в часах.
-    - `max_articles` (int): Новое количество статей для каждой темы.
+    - `start_date` (str): Новая начальная дата в формате ДД.ММ.ГГГГ
+    - `end_date` (str): Новая конечная дата в формате ДД.ММ.ГГГГ
+    - `max_articles` (int): Новое количество статей.
 
     **Пример запроса:**
     ```json
     {
         "interval_hours": 12,
+        "start_date": "03.05.2025",
+        "end_date": "10.05.2025",
         "max_articles": 15
     }
     ```
@@ -114,10 +128,10 @@ def update_schedule(interval_hours: int, max_articles: int = 10):
     """
     try:
         # Обновляем расписание парсинга
-        schedule_all_parsers(interval_hours, max_articles)
+        schedule_period_parser(interval_hours, start_date, end_date, max_articles)
 
-        # Сразу запускаем парсинг всех тем после обновления расписания
-        run_all_parsers(max_articles)
+        # Сразу запускаем парсинг после обновления расписания
+        run_period_parser(start_date, end_date, max_articles)
         return {"message": f"Интервал обновлен на {interval_hours} часов. Количество статей: {max_articles}."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Ошибка при обновлении расписания: {str(e)}")
@@ -126,7 +140,7 @@ def update_schedule(interval_hours: int, max_articles: int = 10):
 @router.delete("/delete_schedule/")
 def delete_schedule():
     """
-    **Удаляет расписание парсинга всех тем.**
+    **Удаляет расписание парсинга.**
 
     **Пример запроса:**
     ```
@@ -135,7 +149,7 @@ def delete_schedule():
     **Ответ:**
     ```json
     {
-        "message": "Парсинг всех тем удален из расписания."
+        "message": "Парсинг удален из расписания."
     }
     ```
     """
@@ -145,10 +159,10 @@ def delete_schedule():
     conn.commit()
     conn.close()
 
-    if scheduler.get_job("all_parsers"):
-        scheduler.remove_job("all_parsers")
+    if scheduler.get_job("period_parser"):
+        scheduler.remove_job("period_parser")
 
-    return {"message": "Парсинг всех тем удален из расписания."}
+    return {"message": "Парсинг удален из расписания."}
 
 # Функция загрузки расписания при запуске сервера
 def load_scheduled_jobs():
@@ -157,7 +171,7 @@ def load_scheduled_jobs():
     """
     conn = get_db_connection()
     with conn.cursor() as cursor:
-        cursor.execute("SELECT interval_hours, max_articles FROM parser_schedule WHERE topic_id = 0")
+        cursor.execute("SELECT interval_hours, max_articles, start_date, end_date FROM parser_schedule WHERE topic_id = 0")
         schedule = cursor.fetchone()
     conn.close()
 
@@ -165,11 +179,18 @@ def load_scheduled_jobs():
         # Преобразуем кортеж в словарь
         schedule_dict = {
             "interval_hours": schedule[0],
-            "max_articles": schedule[1]
+            "max_articles": schedule[1],
+            "start_date": schedule[2],
+            "end_date": schedule[3]
         }
-        scheduler.add_job(run_all_parsers, 'interval', hours=schedule_dict["interval_hours"], args=[schedule_dict["max_articles"]], id="all_parsers")
-        print(f"🔄 Загружена задача парсинга всех тем (каждые {schedule_dict['interval_hours']} часов, {schedule_dict['max_articles']} статей на тему).")
-
+        scheduler.add_job(
+            run_period_parser, 
+            'interval', 
+            hours=schedule_dict["interval_hours"], 
+            args=[schedule_dict["start_date"], schedule_dict["end_date"], schedule_dict["max_articles"]], 
+            id="period_parser"
+        )
+        print(f"🔄 Загружена задача парсинга (каждые {schedule_dict['interval_hours']} часов, {schedule_dict['max_articles']} статей).")
 
 # Запуск планировщика при старте сервера
 scheduler.start()
