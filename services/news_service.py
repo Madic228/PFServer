@@ -62,7 +62,7 @@ def get_news_by_date(start_date: str, end_date: str) -> List[NewsResponse]:
 
 def get_topics_statistics(start_date: str, end_date: str) -> Dict:
     """
-    Получает статистику по темам за указанный период.
+    Получает статистику по всем темам за указанный период.
     
     Args:
         start_date (str): Начальная дата в формате YYYY-MM-DD
@@ -79,6 +79,7 @@ def get_topics_statistics(start_date: str, end_date: str) -> Dict:
             "topics": [
                 {
                     "topic_id": 1,
+                    "topic_name": "Название темы",
                     "count": 25,
                     "percentage": 25.0
                 },
@@ -99,12 +100,6 @@ def get_topics_statistics(start_date: str, end_date: str) -> Dict:
         cursor.execute(total_query, (start_date, end_date))
         total = cursor.fetchone()['total']
 
-        if total == 0:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Новости не найдены за период с {start_date} по {end_date}"
-            )
-
         # Получаем статистику по темам
         topics_query = """
             SELECT 
@@ -113,26 +108,42 @@ def get_topics_statistics(start_date: str, end_date: str) -> Dict:
             FROM articles
             WHERE DATE(publication_date) BETWEEN %s AND %s
             GROUP BY topic_id
-            ORDER BY count DESC
+            ORDER BY topic_id
         """
         cursor.execute(topics_query, (start_date, end_date))
-        topics = cursor.fetchall()
+        topics_data = {row['topic_id']: row['count'] for row in cursor.fetchall()}
 
-        # Формируем результат
+        # Словарь с названиями тем
+        topic_names = {
+            1: "РБК Недвижимость",
+            2: "RIA Realty",
+            3: "E1.RU Финансы",
+            4: "E1.RU Строительство",
+            5: "E1.RU Недвижимость",
+            6: "E1.RU Общие новости"
+        }
+
+        # Формируем результат для всех тем
+        topics = []
+        for topic_id in range(1, 7):  # Всего 6 тем
+            count = topics_data.get(topic_id, 0)
+            percentage = round((count / total) * 100, 2) if total > 0 else 0.0
+            
+            topics.append({
+                "topic_id": topic_id,
+                "topic_name": topic_names.get(topic_id, "Неизвестная тема"),
+                "count": count,
+                "percentage": percentage
+            })
+
+        # Формируем итоговый результат
         result = {
             "period": {
                 "start_date": start_date,
                 "end_date": end_date
             },
             "total_articles": total,
-            "topics": [
-                {
-                    "topic_id": topic['topic_id'],
-                    "count": topic['count'],
-                    "percentage": round((topic['count'] / total) * 100, 2)
-                }
-                for topic in topics
-            ]
+            "topics": topics
         }
 
         return result
