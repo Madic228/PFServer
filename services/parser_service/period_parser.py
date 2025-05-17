@@ -46,11 +46,9 @@ def parse_article_content(html: str) -> str:
 class PeriodNewsParser:
     def __init__(self,
                  period_days: int = 7,
-                 check_previous_days: int = 2,
-                 test_articles_count: int = 0):
+                 check_previous_days: int = 2):
         self.period_days = period_days
         self.check_previous_days = check_previous_days
-        self.test_articles_count = test_articles_count
         self.headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
@@ -132,9 +130,6 @@ class PeriodNewsParser:
 
                         article_id += 1
 
-                        if self.test_articles_count > 0 and len(results) >= self.test_articles_count:
-                            return results
-
                     except Exception as e:
                         logger.error(f"Ошибка при обработке новости: {e}")
                         continue
@@ -151,9 +146,6 @@ class PeriodNewsParser:
         return results
 
     def fill_articles_content(self, articles: List[Dict]) -> List[Dict]:
-        if self.test_articles_count > 0:
-            articles = articles[:self.test_articles_count]
-
         total_articles = len(articles)
 
         for index, article in enumerate(articles, 1):
@@ -219,8 +211,7 @@ class PeriodNewsParser:
 if __name__ == "__main__":
     parser = PeriodNewsParser(
         period_days=7,
-        check_previous_days=2,
-        test_articles_count=20
+        check_previous_days=2
     )
     result = parser.parse()
     print(f"\n✅ Обработка завершена. Собрано {len(result)} статей.") 
