@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from apscheduler.schedulers.background import BackgroundScheduler
+from datetime import datetime
 
 from db.database import get_db_connection
 from services.parser_service.period_parser import PeriodNewsParser
@@ -189,38 +190,40 @@ def load_scheduled_jobs():
 
 # Эндпоинт для разового парсинга без добавления в расписание
 @router.post("/parse_once/")
-def parse_once(start_date: str, end_date: str, max_articles: int = 10):
+def parse_once(start_date: str, end_date: str):
     """
     **Выполняет разовый парсинг за указанный период без добавления в расписание.**
 
     **Параметры:**
     - `start_date` (str): Начальная дата в формате ДД.ММ.ГГГГ
     - `end_date` (str): Конечная дата в формате ДД.ММ.ГГГГ
-    - `max_articles` (int, по умолчанию 10): Количество новостей для сбора.
 
     **Пример запроса:**
     ```json
     {
         "start_date": "03.05.2025",
-        "end_date": "10.05.2025",
-        "max_articles": 10
+        "end_date": "10.05.2025"
     }
     ```
     **Ответ:**
     ```json
     {
-        "message": "Парсинг выполнен успешно. Собрано 10 статей.",
-        "articles_count": 10
+        "message": "Парсинг выполнен успешно. Собрано 15 статей.",
+        "articles_count": 15
     }
     ```
     """
     try:
+        # Преобразуем даты в формат datetime для вычисления периода
+        start = datetime.strptime(start_date, "%d.%m.%Y")
+        end = datetime.strptime(end_date, "%d.%m.%Y")
+        
+        # Вычисляем количество дней между датами
+        period_days = (end - start).days + 1
+        
         parser = PeriodNewsParser(
-            parsing_mode="custom_period",
-            start_date=start_date,
-            end_date=end_date,
-            total_pages=0,
-            test_articles_count=max_articles
+            period_days=period_days,
+            check_previous_days=0  # Для разового парсинга не проверяем предыдущие дни
         )
         
         articles = parser.parse()
