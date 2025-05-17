@@ -1,6 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 from typing import List, Dict
 import dateparser
@@ -45,15 +45,11 @@ def parse_article_content(html: str) -> str:
 
 class PeriodNewsParser:
     def __init__(self,
-                 parsing_mode: str = "custom_period",
-                 start_date: str = "03.05.2025",
-                 end_date: str = "10.05.2025",
-                 total_pages: int = 2,
+                 period_days: int = 7,
+                 check_previous_days: int = 2,
                  test_articles_count: int = 0):
-        self.parsing_mode = parsing_mode
-        self.start_date = start_date
-        self.end_date = end_date
-        self.total_pages = total_pages
+        self.period_days = period_days
+        self.check_previous_days = check_previous_days
         self.test_articles_count = test_articles_count
         self.headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
@@ -63,26 +59,34 @@ class PeriodNewsParser:
             'Connection': 'keep-alive',
         }
 
+    def get_date_range(self):
+        """Вычисляет диапазон дат для парсинга."""
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=self.period_days)
+        return start_date.strftime("%d.%m.%Y"), end_date.strftime("%d.%m.%Y")
+
+    def get_existing_links(self) -> set:
+        """Получает список существующих ссылок из БД."""
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute("SELECT link FROM articles")
+            return {row[0] for row in cursor.fetchall()}
+        finally:
+            cursor.close()
+            conn.close()
+
     def collect_articles(self) -> List[Dict]:
-        if self.parsing_mode == "all_time":
-            base_url = "https://www.e1.ru/text/realty/page-{}/"
-        else:
-            base_url = f"https://www.e1.ru/text/realty/?dateFrom={self.start_date}&dateTo={self.end_date}&page={{}}/"
+        start_date, end_date = self.get_date_range()
+        base_url = f"https://www.e1.ru/text/realty/?dateFrom={start_date}&dateTo={end_date}&page={{}}/"
 
         results = []
         seen_links = set()
         article_id = 1
-
-        # Определяем режим обхода страниц
-        if self.total_pages > 0:
-            max_pages = self.total_pages
-        elif self.total_pages == 0 and self.test_articles_count > 0:
-            max_pages = float('inf')
-        else:
-            max_pages = 3
+        existing_links = self.get_existing_links()
 
         page = 1
-        while page <= max_pages:
+        while True:
             try:
                 response = requests.get(base_url.format(page), headers=self.headers)
                 response.raise_for_status()
@@ -106,7 +110,8 @@ class PeriodNewsParser:
                         link = a_tag.get('href', '').strip()
                         full_link = link if link.startswith('http') else f'https://www.e1.ru{link}'
 
-                        if full_link in seen_links:
+                        # Пропускаем если ссылка уже существует в БД или в текущей сессии
+                        if full_link in existing_links or full_link in seen_links:
                             continue
 
                         seen_links.add(full_link)
@@ -213,10 +218,8 @@ class PeriodNewsParser:
 
 if __name__ == "__main__":
     parser = PeriodNewsParser(
-        parsing_mode="custom_period",
-        start_date="03.05.2025",
-        end_date="10.05.2025",
-        total_pages=0,
+        period_days=7,
+        check_previous_days=2,
         test_articles_count=20
     )
     result = parser.parse()
