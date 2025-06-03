@@ -182,9 +182,52 @@ class E1RealtyRequestParser:
 
         return articles
 
+    def save_to_db(self, articles: List[Dict]) -> None:
+        """Сохраняет статьи в базу данных."""
+        if not articles:
+            logger.warning("Нет статей для сохранения в БД")
+            return
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        try:
+            # Проверяем существующие ссылки
+            cursor.execute("SELECT link FROM articles")
+            existing_links = {row[0] for row in cursor.fetchall()}
+
+            # Подготавливаем запрос для вставки
+            insert_query = """
+                   INSERT INTO articles (title, publication_date, link, content, source)
+                   VALUES (%s, %s, %s, %s, %s)
+               """
+
+            new_articles = 0
+            for article in articles:
+                if article['link'] not in existing_links:
+                    cursor.execute(insert_query, (
+                        article['title'],
+                        article['date'],
+                        article['link'],
+                        article['content'],
+                        article['source']
+                    ))
+                    new_articles += 1
+
+            conn.commit()
+            logger.info(f"✅ {new_articles} новых статей сохранено в БД")
+
+        except Exception as e:
+            conn.rollback()
+            logger.error(f"❌ Ошибка при сохранении в БД: {e}")
+        finally:
+            cursor.close()
+            conn.close()
+
     def parse(self) -> List[Dict]:
         articles = self.collect_articles()
         articles = self.fill_articles_content(articles)
+        self.save_to_db(articles)
         return articles
 
 
