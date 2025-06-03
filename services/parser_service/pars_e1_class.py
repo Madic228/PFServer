@@ -38,7 +38,7 @@ def normalize_date(date_string: str) -> str:
 
 def parse_article_content(html: str) -> str:
     soup = BeautifulSoup(html, 'html.parser')
-    article_body = soup.find('div', id='articleBody', class_='articleContent_fefJj')
+    article_body = soup.find('div', id='articleBody', class_='articleContent_0DdLJ')
     if not article_body:
         #logger.warning("Не найден блок с содержимым статьи.")
         return ""
@@ -96,7 +96,7 @@ class E1RealtyRequestParser:
                 response.raise_for_status()
                 soup = BeautifulSoup(response.text, 'html.parser')
 
-                news_blocks = soup.find_all('div', class_='wrap_DjvF8')
+                news_blocks = soup.find_all('div', class_='wrap_RL97A')
                 if not news_blocks:
                     #logger.warning(f"Не найдено ни одного новостного блока на странице {page}. Прекращаем парсинг.")
                     break
@@ -105,7 +105,7 @@ class E1RealtyRequestParser:
 
                 for block in news_blocks:
                     try:
-                        content_div = block.find('div', class_='content_DjvF8')
+                        content_div = block.find('div', class_='content_RL97A')
                         if not content_div:
                             continue
 
@@ -122,8 +122,8 @@ class E1RealtyRequestParser:
 
                         seen_links.add(full_link)
 
-                        date_wrap = block.find('div', class_='wrap_0UNFI')
-                        date_span = date_wrap.find('span', class_='text_0UNFI') if date_wrap else None
+                        date_wrap = block.find('div', class_='wrap_eiDCU dark_eiDCU statistic_RL97A')
+                        date_span = date_wrap.find('span', class_='text_eiDCU') if date_wrap else None
                         date_raw = date_span.text.strip() if date_span else ''
                         date_formatted = normalize_date(date_raw)
 
