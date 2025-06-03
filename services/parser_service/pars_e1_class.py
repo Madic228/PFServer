@@ -7,6 +7,7 @@ import re
 import dateparser
 import logging
 from typing import List, Dict
+from db.database import get_db_connection
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
