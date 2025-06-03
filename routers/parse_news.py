@@ -4,6 +4,7 @@ from datetime import datetime
 
 from db.database import get_db_connection
 from services.parser_service.period_parser import PeriodNewsParser
+from services.parser_service.pars_e1_class import E1RealtyRequestParser
 
 router = APIRouter()
 scheduler = BackgroundScheduler()
@@ -214,16 +215,12 @@ def parse_once(start_date: str, end_date: str):
     ```
     """
     try:
-        # Преобразуем даты в формат datetime для вычисления периода
-        start = datetime.strptime(start_date, "%d.%m.%Y")
-        end = datetime.strptime(end_date, "%d.%m.%Y")
-        
-        # Вычисляем количество дней между датами
-        period_days = (end - start).days + 1
-        
-        parser = PeriodNewsParser(
-            period_days=period_days,
-            check_previous_days=0  # Для разового парсинга не проверяем предыдущие дни
+        parser = E1RealtyRequestParser(
+            parsing_mode="custom_period",
+            start_date=start_date,
+            end_date=end_date,
+            total_pages=0,  # Парсим все доступные страницы
+            test_articles_count=0  # Без ограничения по количеству статей
         )
         
         articles = parser.parse()
