@@ -41,7 +41,7 @@ def get_news_by_date(start_date: str, end_date: str) -> List[NewsResponse]:
 
     try:
         query = """
-            SELECT topic_id, title, publication_date, link, summarized_text, source
+            SELECT topic_id, title, publication_date, link, COALESCE(summarized_text, '') as summarized_text, source
             FROM articles
             WHERE DATE(publication_date) BETWEEN %s AND %s
             ORDER BY publication_date DESC
