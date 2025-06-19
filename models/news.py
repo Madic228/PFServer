@@ -11,3 +11,4 @@ class NewsResponse(BaseModel):
     link: str
     summarized_text: str
     source: str
+    content: str  # Новое поле для полного текста новости
